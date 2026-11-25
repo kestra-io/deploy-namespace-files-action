@@ -62,13 +62,14 @@ runs:
         INPUT_SERVER: ${{ inputs.server }}
         INPUT_TENANT: ${{ inputs.tenant }}
       run: |
-        OPTS=""
+        args=(nsfiles upload "$INPUT_NAMESPACE" "$INPUT_LOCAL_PATH" "$INPUT_NAMESPACE_PATH" --host "$INPUT_SERVER" --tenant "$INPUT_TENANT")
         if [ "$INPUT_OVERRIDE" = "true" ]; then
-          OPTS="$OPTS --override"
+          args+=(--override)
         fi
         if [ -n "$INPUT_API_TOKEN" ]; then
-          OPTS="$OPTS --token $INPUT_API_TOKEN"
+          export KESTRACTL_TOKEN="$INPUT_API_TOKEN"
         elif [ -n "$INPUT_USER" ] && [ -n "$INPUT_PASSWORD" ]; then
-          OPTS="$OPTS --username $INPUT_USER --password $INPUT_PASSWORD"
+          unset KESTRACTL_TOKEN
+          export KESTRACTL_USERNAME="$INPUT_USER" KESTRACTL_PASSWORD="$INPUT_PASSWORD"
         fi
-        ./kestractl nsfiles upload $INPUT_NAMESPACE $INPUT_LOCAL_PATH $INPUT_NAMESPACE_PATH --host $INPUT_SERVER --tenant $INPUT_TENANT $OPTS
+        ./kestractl "${args[@]}"
