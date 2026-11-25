@@ -40,21 +40,35 @@ runs:
   steps:
     - name: Install CLI
       shell: bash
-      run: curl -fsSL https://raw.githubusercontent.com/kestra-io/kestractl/main/install-scripts/install.sh | VERSION='${{inputs.kestractlVersion}}' INSTALL_DIR='./' bash
+      env:
+        VERSION: ${{ inputs.kestractlVersion }}
+        INSTALL_DIR: ./
+      run: |
+        curl -fsSL -o "$RUNNER_TEMP/kestractl-install.sh" https://raw.githubusercontent.com/kestra-io/kestractl/main/install-scripts/install.sh
+        bash "$RUNNER_TEMP/kestractl-install.sh"
 
     - name: Run CLI
       shell: bash
       env:
         # indicate in telemetry that kestractl was called from our action
         KESTRACTL_GITHUB_ACTION: "true"
+        INPUT_NAMESPACE: ${{ inputs.namespace }}
+        INPUT_LOCAL_PATH: ${{ inputs.localPath }}
+        INPUT_NAMESPACE_PATH: ${{ inputs.namespacePath }}
+        INPUT_OVERRIDE: ${{ inputs.override }}
+        INPUT_API_TOKEN: ${{ inputs.apiToken }}
+        INPUT_USER: ${{ inputs.user }}
+        INPUT_PASSWORD: ${{ inputs.password }}
+        INPUT_SERVER: ${{ inputs.server }}
+        INPUT_TENANT: ${{ inputs.tenant }}
       run: |
         OPTS=""
-        if [ "${{inputs.override}}" = "true" ]; then
+        if [ "$INPUT_OVERRIDE" = "true" ]; then
           OPTS="$OPTS --override"
         fi
-        if [ -n "${{inputs.apiToken}}" ]; then
-          OPTS="$OPTS --token ${{inputs.apiToken}}"
-        elif [ -n "${{inputs.user}}" ] && [ -n "${{inputs.password}}" ]; then
-          OPTS="$OPTS --username ${{inputs.user}} --password ${{inputs.password}}"
+        if [ -n "$INPUT_API_TOKEN" ]; then
+          OPTS="$OPTS --token $INPUT_API_TOKEN"
+        elif [ -n "$INPUT_USER" ] && [ -n "$INPUT_PASSWORD" ]; then
+          OPTS="$OPTS --username $INPUT_USER --password $INPUT_PASSWORD"
         fi
-        ./kestractl nsfiles upload ${{inputs.namespace}} ${{inputs.localPath}} ${{inputs.namespacePath}} --host ${{inputs.server}} --tenant ${{inputs.tenant}} $OPTS
+        ./kestractl nsfiles upload $INPUT_NAMESPACE $INPUT_LOCAL_PATH $INPUT_NAMESPACE_PATH --host $INPUT_SERVER --tenant $INPUT_TENANT $OPTS
